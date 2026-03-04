@@ -373,15 +373,6 @@ interface GrammarVisitor extends ParseTreeVisitor
 	public function visitCondFor(Context\CondForContext $context);
 
 	/**
-	 * Visit a parse tree produced by {@see GrammarParser::bloqueFor()}.
-	 *
-	 * @param Context\BloqueForContext $context The parse tree.
-	 *
-	 * @return mixed The visitor result.
-	 */
-	public function visitBloqueFor(Context\BloqueForContext $context);
-
-	/**
 	 * Visit a parse tree produced by {@see GrammarParser::expFor()}.
 	 *
 	 * @param Context\ExpForContext $context The parse tree.
@@ -436,22 +427,13 @@ interface GrammarVisitor extends ParseTreeVisitor
 	public function visitSentenciaIf(Context\SentenciaIfContext $context);
 
 	/**
-	 * Visit a parse tree produced by {@see GrammarParser::bloqueElse()}.
+	 * Visit a parse tree produced by {@see GrammarParser::bloque()}.
 	 *
-	 * @param Context\BloqueElseContext $context The parse tree.
-	 *
-	 * @return mixed The visitor result.
-	 */
-	public function visitBloqueElse(Context\BloqueElseContext $context);
-
-	/**
-	 * Visit a parse tree produced by {@see GrammarParser::bloqueElseIf()}.
-	 *
-	 * @param Context\BloqueElseIfContext $context The parse tree.
+	 * @param Context\BloqueContext $context The parse tree.
 	 *
 	 * @return mixed The visitor result.
 	 */
-	public function visitBloqueElseIf(Context\BloqueElseIfContext $context);
+	public function visitBloque(Context\BloqueContext $context);
 
 	/**
 	 * Visit a parse tree produced by {@see GrammarParser::asignacion()}.
@@ -577,16 +559,6 @@ interface GrammarVisitor extends ParseTreeVisitor
 	public function visitBinaryExpressionT(Context\BinaryExpressionTContext $context);
 
 	/**
-	 * Visit a parse tree produced by the `ToModTerm` labeled alternative
-	 * in {@see GrammarParser::term()}.
-	 *
-	 * @param Context\ToModTermContext $context The parse tree.
-	 *
-	 * @return mixed The visitor result.
-	 */
-	public function visitToModTerm(Context\ToModTermContext $context);
-
-	/**
 	 * Visit a parse tree produced by the `BinaryExpressionS` labeled alternative
 	 * in {@see GrammarParser::term()}.
 	 *
@@ -597,18 +569,8 @@ interface GrammarVisitor extends ParseTreeVisitor
 	public function visitBinaryExpressionS(Context\BinaryExpressionSContext $context);
 
 	/**
-	 * Visit a parse tree produced by the `BinaryExpressionF` labeled alternative
-	 * in {@see GrammarParser::modterm()}.
-	 *
-	 * @param Context\BinaryExpressionFContext $context The parse tree.
-	 *
-	 * @return mixed The visitor result.
-	 */
-	public function visitBinaryExpressionF(Context\BinaryExpressionFContext $context);
-
-	/**
 	 * Visit a parse tree produced by the `toFactor` labeled alternative
-	 * in {@see GrammarParser::modterm()}.
+	 * in {@see GrammarParser::term()}.
 	 *
 	 * @param Context\ToFactorContext $context The parse tree.
 	 *

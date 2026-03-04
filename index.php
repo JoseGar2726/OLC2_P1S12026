@@ -71,7 +71,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
             $parser -> removeErrorListeners();
 
-            $sintaxErrors = [];
+            $syntaxErrors = [];
             $parser->addErrorListener(new class($syntaxErros) implements \Antlr\Antlr4\Runtime\Error\Listeners\ANTLRErrorListener{
                 private $errors;
                 public function __construct(&$errors) { $this->errors = &$errors; }
@@ -126,7 +126,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             $tree = $parser->p();
 
             //errores sintacticos
-            $syntaxErrorsJson = json_encode($syntaxErros, JSON_PRETTY_PRINT);
+            $syntaxErrorsJson = json_encode($syntaxErrors, JSON_PRETTY_PRINT);
 
             $interpreter = new Interpreter();
             $interpreter->visit($tree);
@@ -134,8 +134,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             $output = $interpreter->console;
 
             //TABLA DE VARIABLES
-            $simbolsJson = json_encode($interpreter->simbols, JSON_PRETTY_PRINT);
-
+            $symbolsJson = json_encode($interpreter->visibleSymbols ?? '{}', JSON_PRETTY_PRINT);
 
         } catch (Exception $e) {
             $output = "Error: " . $e->getMessage();
@@ -187,7 +186,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                         const tokens = <?php echo $tokensJson ?? '[]'; ?>;
                         const errors = <?php echo $errorsJson ?? '[]'; ?>;
                         const syntaxErrors = <?php echo $syntaxErrorsJson ?? '[]'; ?>;
-                        const symbols = <?php echo $simbolsJson ?? '{}'; ?>;
+                        const symbols = <?php echo $symbolsJson ?? '{}'; ?>;
 
                         console.log("TOKENS:", tokens);
                         console.log("LEXICAL ERRORS:", errors);

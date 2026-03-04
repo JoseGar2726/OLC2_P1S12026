@@ -430,16 +430,6 @@ interface GrammarListener extends ParseTreeListener {
 	 */
 	public function exitCondFor(Context\CondForContext $context): void;
 	/**
-	 * Enter a parse tree produced by {@see GrammarParser::bloqueFor()}.
-	 * @param $context The parse tree.
-	 */
-	public function enterBloqueFor(Context\BloqueForContext $context): void;
-	/**
-	 * Exit a parse tree produced by {@see GrammarParser::bloqueFor()}.
-	 * @param $context The parse tree.
-	 */
-	public function exitBloqueFor(Context\BloqueForContext $context): void;
-	/**
 	 * Enter a parse tree produced by {@see GrammarParser::expFor()}.
 	 * @param $context The parse tree.
 	 */
@@ -500,25 +490,15 @@ interface GrammarListener extends ParseTreeListener {
 	 */
 	public function exitSentenciaIf(Context\SentenciaIfContext $context): void;
 	/**
-	 * Enter a parse tree produced by {@see GrammarParser::bloqueElse()}.
+	 * Enter a parse tree produced by {@see GrammarParser::bloque()}.
 	 * @param $context The parse tree.
 	 */
-	public function enterBloqueElse(Context\BloqueElseContext $context): void;
+	public function enterBloque(Context\BloqueContext $context): void;
 	/**
-	 * Exit a parse tree produced by {@see GrammarParser::bloqueElse()}.
+	 * Exit a parse tree produced by {@see GrammarParser::bloque()}.
 	 * @param $context The parse tree.
 	 */
-	public function exitBloqueElse(Context\BloqueElseContext $context): void;
-	/**
-	 * Enter a parse tree produced by {@see GrammarParser::bloqueElseIf()}.
-	 * @param $context The parse tree.
-	 */
-	public function enterBloqueElseIf(Context\BloqueElseIfContext $context): void;
-	/**
-	 * Exit a parse tree produced by {@see GrammarParser::bloqueElseIf()}.
-	 * @param $context The parse tree.
-	 */
-	public function exitBloqueElseIf(Context\BloqueElseIfContext $context): void;
+	public function exitBloque(Context\BloqueContext $context): void;
 	/**
 	 * Enter a parse tree produced by {@see GrammarParser::asignacion()}.
 	 * @param $context The parse tree.
@@ -662,18 +642,6 @@ interface GrammarListener extends ParseTreeListener {
 	 */
 	public function exitBinaryExpressionT(Context\BinaryExpressionTContext $context): void;
 	/**
-	 * Enter a parse tree produced by the `ToModTerm`
-	 * labeled alternative in {@see GrammarParser::term()}.
-	 * @param $context The parse tree.
-	 */
-	public function enterToModTerm(Context\ToModTermContext $context): void;
-	/**
-	 * Exit a parse tree produced by the `ToModTerm` labeled alternative
-	 * in {@see GrammarParser::term()}.
-	 * @param $context The parse tree.
-	 */
-	public function exitToModTerm(Context\ToModTermContext $context): void;
-	/**
 	 * Enter a parse tree produced by the `BinaryExpressionS`
 	 * labeled alternative in {@see GrammarParser::term()}.
 	 * @param $context The parse tree.
@@ -686,26 +654,14 @@ interface GrammarListener extends ParseTreeListener {
 	 */
 	public function exitBinaryExpressionS(Context\BinaryExpressionSContext $context): void;
 	/**
-	 * Enter a parse tree produced by the `BinaryExpressionF`
-	 * labeled alternative in {@see GrammarParser::modterm()}.
-	 * @param $context The parse tree.
-	 */
-	public function enterBinaryExpressionF(Context\BinaryExpressionFContext $context): void;
-	/**
-	 * Exit a parse tree produced by the `BinaryExpressionF` labeled alternative
-	 * in {@see GrammarParser::modterm()}.
-	 * @param $context The parse tree.
-	 */
-	public function exitBinaryExpressionF(Context\BinaryExpressionFContext $context): void;
-	/**
 	 * Enter a parse tree produced by the `toFactor`
-	 * labeled alternative in {@see GrammarParser::modterm()}.
+	 * labeled alternative in {@see GrammarParser::term()}.
 	 * @param $context The parse tree.
 	 */
 	public function enterToFactor(Context\ToFactorContext $context): void;
 	/**
 	 * Exit a parse tree produced by the `toFactor` labeled alternative
-	 * in {@see GrammarParser::modterm()}.
+	 * in {@see GrammarParser::term()}.
 	 * @param $context The parse tree.
 	 */
 	public function exitToFactor(Context\ToFactorContext $context): void;

@@ -515,19 +515,6 @@ class GrammarBaseListener implements GrammarListener
 	 *
 	 * The default implementation does nothing.
 	 */
-	public function enterBloqueFor(Context\BloqueForContext $context): void {}
-
-	/**
-	 * {@inheritdoc}
-	 *
-	 * The default implementation does nothing.
-	 */
-	public function exitBloqueFor(Context\BloqueForContext $context): void {}
-	/**
-	 * {@inheritdoc}
-	 *
-	 * The default implementation does nothing.
-	 */
 	public function enterExpFor(Context\ExpForContext $context): void {}
 
 	/**
@@ -606,27 +593,14 @@ class GrammarBaseListener implements GrammarListener
 	 *
 	 * The default implementation does nothing.
 	 */
-	public function enterBloqueElse(Context\BloqueElseContext $context): void {}
+	public function enterBloque(Context\BloqueContext $context): void {}
 
 	/**
 	 * {@inheritdoc}
 	 *
 	 * The default implementation does nothing.
 	 */
-	public function exitBloqueElse(Context\BloqueElseContext $context): void {}
-	/**
-	 * {@inheritdoc}
-	 *
-	 * The default implementation does nothing.
-	 */
-	public function enterBloqueElseIf(Context\BloqueElseIfContext $context): void {}
-
-	/**
-	 * {@inheritdoc}
-	 *
-	 * The default implementation does nothing.
-	 */
-	public function exitBloqueElseIf(Context\BloqueElseIfContext $context): void {}
+	public function exitBloque(Context\BloqueContext $context): void {}
 	/**
 	 * {@inheritdoc}
 	 *
@@ -801,19 +775,6 @@ class GrammarBaseListener implements GrammarListener
 	 *
 	 * The default implementation does nothing.
 	 */
-	public function enterToModTerm(Context\ToModTermContext $context): void {}
-
-	/**
-	 * {@inheritdoc}
-	 *
-	 * The default implementation does nothing.
-	 */
-	public function exitToModTerm(Context\ToModTermContext $context): void {}
-	/**
-	 * {@inheritdoc}
-	 *
-	 * The default implementation does nothing.
-	 */
 	public function enterBinaryExpressionS(Context\BinaryExpressionSContext $context): void {}
 
 	/**
@@ -822,19 +783,6 @@ class GrammarBaseListener implements GrammarListener
 	 * The default implementation does nothing.
 	 */
 	public function exitBinaryExpressionS(Context\BinaryExpressionSContext $context): void {}
-	/**
-	 * {@inheritdoc}
-	 *
-	 * The default implementation does nothing.
-	 */
-	public function enterBinaryExpressionF(Context\BinaryExpressionFContext $context): void {}
-
-	/**
-	 * {@inheritdoc}
-	 *
-	 * The default implementation does nothing.
-	 */
-	public function exitBinaryExpressionF(Context\BinaryExpressionFContext $context): void {}
 	/**
 	 * {@inheritdoc}
 	 *

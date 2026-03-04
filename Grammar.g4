@@ -6,7 +6,7 @@ p
 
 
 bMain
-    : FUNC MAIN LPAREN RPAREN LBRACE (i SEMICOLON?)* RBRACE #BloqueMain
+    : FUNC MAIN LPAREN RPAREN bloque #BloqueMain
     ;
 i
     : imprimir #FuncionImprimir  
@@ -94,21 +94,17 @@ accesoArreglos
 
 sentenciaFor
     : FOR forClasico
-    | FOR logExpr bloqueFor
-    | FOR bloqueFor
+    | FOR logExpr bloque
+    | FOR bloque
     ;
 
 forClasico
-    : declaracionCorta SEMICOLON logExpr SEMICOLON condFor bloqueFor 
+    : declaracionCorta SEMICOLON logExpr SEMICOLON condFor bloque 
     ;
 
 condFor
     : expFor
     | asignacion
-    ;
-
-bloqueFor
-    : LBRACE (i SEMICOLON?)* RBRACE
     ;
 
 expFor
@@ -121,32 +117,27 @@ sentenciaSwitch
     ;
 
 bloqueSwitch
-    : bloqueCase* bloqueDefault?
+    : bloqueCase+ bloqueDefault?
     ;
 
 bloqueCase
-    : CASE listaExpr COLON (i SEMICOLON?)*
+    : CASE listaExpr COLON bloque
     ;
 
 bloqueDefault
-    : DEFAULT COLON (i SEMICOLON?)*
+    : DEFAULT COLON bloque
     ;
 
 sentenciaIf
-    : IF logExpr LBRACE (i SEMICOLON?)* RBRACE bloqueElseIf
+    : IF logExpr bloque (ELSE IF logExpr bloque)* (ELSE bloque)?
     ;
 
-bloqueElse
-    : ELSE LBRACE (i SEMICOLON?)* RBRACE
-    |
-    ;
-
-bloqueElseIf
-    : (ELSE IF logExpr LBRACE (i SEMICOLON?)* RBRACE)* bloqueElse
+bloque
+    : LBRACE (i SEMICOLON?)* RBRACE
     ;
 
 asignacion
-    : IDENTIFICADOR simboloAsignacion expr
+    : IDENTIFICADOR simboloAsignacion logExpr
     ;
 
 imprimir
@@ -163,7 +154,7 @@ declaracionCorta
     ;
 
 declaracionConst
-    : CONST IDENTIFICADOR tipos ASSIGN expr
+    : CONST IDENTIFICADOR tipos ASSIGN logExpr
     ;
 
 listaExpr
@@ -190,15 +181,10 @@ expr
     ;
 
 term
-    : term op=(MULT | DIV) modterm # BinaryExpressionS
-    | modterm #ToModTerm
+    : term op=(MULT | DIV | MOD) factor # BinaryExpressionS
+    | factor #toFactor
     ;
 
-modterm
-    : modterm MOD factor # BinaryExpressionF
-    | factor #toFactor   
-    ;
-    
 factor
     : LPAREN logExpr RPAREN # GroupedExpression
     | MINUS factor # UnaryExpression
@@ -290,9 +276,13 @@ NEQUAL: '!=';
 LESS : '<';
 GREATER : '>';
 
+BOOL
+    : 'true'
+    | 'false'
+    ;
 
-IDENTIFICADOR
-    : ([_a-zA-Z])([_a-zA-Z0-9])*
+NIL
+    : 'nil'
     ;
 
 ENTERO
@@ -304,21 +294,26 @@ FLOAT
     | '.' [0-9]+
     ;
 
-BOOL
-    : 'true'
-    | 'false'
-    ;
-
 STR
     : '"' ( ~["\\] | '\\' . )* '"'
     ;
 
 RUNE
-    : '\'' ( ~['\\] | '\\' . ) '\'' 
+    : '\'' ( ~['\\]
+        | '\\n'
+        | '\\t'
+        | '\\r'
+        | '\\\\'
+        | '\\\''
+        | '\\u' HEX HEX HEX HEX
+        ) '\''  
     ;
 
-NIL
-    : 'nil'
+fragment HEX
+    : [0-9a-fA-F];
+
+IDENTIFICADOR
+    : ([_a-zA-Z])([_a-zA-Z0-9])*
     ;
 
 COMENTARIO_LINEA
