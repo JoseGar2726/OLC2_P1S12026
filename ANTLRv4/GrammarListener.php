@@ -188,6 +188,18 @@ interface GrammarListener extends ParseTreeListener {
 	 */
 	public function exitLlamarFuncion(Context\LlamarFuncionContext $context): void;
 	/**
+	 * Enter a parse tree produced by the `prueba`
+	 * labeled alternative in {@see GrammarParser::i()}.
+	 * @param $context The parse tree.
+	 */
+	public function enterPrueba(Context\PruebaContext $context): void;
+	/**
+	 * Exit a parse tree produced by the `prueba` labeled alternative
+	 * in {@see GrammarParser::i()}.
+	 * @param $context The parse tree.
+	 */
+	public function exitPrueba(Context\PruebaContext $context): void;
+	/**
 	 * Enter a parse tree produced by the `SentenciaContinue`
 	 * labeled alternative in {@see GrammarParser::i()}.
 	 * @param $context The parse tree.

@@ -414,7 +414,14 @@
                                 <?php foreach($interpreter->visibleSymbols as $name => $symbol): ?>
                                     <tr>
                                         <td><?php echo htmlspecialchars($name); ?></td>
-                                        <td><?php echo htmlspecialchars($symbol["value"] ?? ""); ?></td>
+                                        <td><?php
+                                            $value =  $symbol["value"] ?? "";
+                                            if(is_array($value)){
+                                                echo htmlspecialchars(json_encode($value, JSON_PRETTY_PRINT));
+                                            } else {
+                                                echo htmlspecialchars($value);
+                                            }
+                                        ?></td>
                                         <td><?php echo htmlspecialchars($symbol["type"] ?? ""); ?></td>
                                         <td><?php echo htmlspecialchars($symbol["params"] ?? ""); ?></td>
                                         <td><?php echo htmlspecialchars($symbol["returns"] ?? ""); ?></td>

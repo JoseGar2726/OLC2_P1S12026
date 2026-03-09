@@ -160,6 +160,16 @@ interface GrammarVisitor extends ParseTreeVisitor
 	public function visitLlamarFuncion(Context\LlamarFuncionContext $context);
 
 	/**
+	 * Visit a parse tree produced by the `prueba` labeled alternative
+	 * in {@see GrammarParser::i()}.
+	 *
+	 * @param Context\PruebaContext $context The parse tree.
+	 *
+	 * @return mixed The visitor result.
+	 */
+	public function visitPrueba(Context\PruebaContext $context);
+
+	/**
 	 * Visit a parse tree produced by the `SentenciaContinue` labeled alternative
 	 * in {@see GrammarParser::i()}.
 	 *

@@ -29,6 +29,7 @@ i
     | funcion #DFunction
     | retornar #SentenciaReturn
     | llamadaFuncion #LlamarFuncion
+    | logExpr #prueba
     | CONTINUE #SentenciaContinue
     | BREAK #SentenciaBreak
     ;
@@ -108,11 +109,11 @@ bloqueSwitch
     ;
 
 bloqueCase
-    : CASE listaExpr COLON bloque
+    : CASE listaExpr COLON i*
     ;
 
 bloqueDefault
-    : DEFAULT COLON bloque
+    : DEFAULT COLON i*
     ;
 
 sentenciaIf

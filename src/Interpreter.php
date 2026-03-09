@@ -286,6 +286,12 @@ use Context\RuneLitContext;
             }
 
             for($i=0; $i<count($args); $i++){
+                if($params[$i]["type"] === "int32"){
+                    $params[$i]["type"] = "int";
+                }
+                if($params[$i]["type"] === "float32"){
+                    $params[$i]["type"] = "float";
+                }
                 if(isset($params[$i]["type"]) && $args[$i]["type"] !== $params[$i]["type"]){
                     $this->addSemanticErrors(
                         "Error semantico: argumento " . ($i + 1) . " de '$nombre' debe ser tipo '{$params[$i]["type"]}', recibido '{$args[$i]["type"]}'",
@@ -499,7 +505,9 @@ use Context\RuneLitContext;
                         }
 
                         if ($caseValue["value"] === $switchV["value"]){
-                            $this->visit($case->bloque());
+                            foreach($case->i() as $inst){
+                                $this->visit($inst);
+                            }
 
                             return null;
                         }
@@ -507,7 +515,9 @@ use Context\RuneLitContext;
                 }
 
                 if ($default !== null){
-                    $this->visit($default->bloque());
+                    foreach($default->i() as $inst){
+                        $this->visit($inst);
+                    }
                 }
             } catch (BreakException $e) {
                 return null;
