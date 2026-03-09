@@ -12,8 +12,7 @@ use Antlr\Antlr4\Runtime\Tree\ParseTreeVisitor;
 interface GrammarVisitor extends ParseTreeVisitor
 {
 	/**
-	 * Visit a parse tree produced by the `Programa` labeled alternative
-	 * in {@see GrammarParser::p()}.
+	 * Visit a parse tree produced by {@see GrammarParser::programa()}.
 	 *
 	 * @param Context\ProgramaContext $context The parse tree.
 	 *
@@ -22,8 +21,17 @@ interface GrammarVisitor extends ParseTreeVisitor
 	public function visitPrograma(Context\ProgramaContext $context);
 
 	/**
+	 * Visit a parse tree produced by {@see GrammarParser::topLevel()}.
+	 *
+	 * @param Context\TopLevelContext $context The parse tree.
+	 *
+	 * @return mixed The visitor result.
+	 */
+	public function visitTopLevel(Context\TopLevelContext $context);
+
+	/**
 	 * Visit a parse tree produced by the `BloqueMain` labeled alternative
-	 * in {@see GrammarParser::bMain()}.
+	 * in {@see GrammarParser::mainFuncion()}.
 	 *
 	 * @param Context\BloqueMainContext $context The parse tree.
 	 *
@@ -122,46 +130,6 @@ interface GrammarVisitor extends ParseTreeVisitor
 	public function visitIncDec(Context\IncDecContext $context);
 
 	/**
-	 * Visit a parse tree produced by the `ArreglosDeclaration` labeled alternative
-	 * in {@see GrammarParser::i()}.
-	 *
-	 * @param Context\ArreglosDeclarationContext $context The parse tree.
-	 *
-	 * @return mixed The visitor result.
-	 */
-	public function visitArreglosDeclaration(Context\ArreglosDeclarationContext $context);
-
-	/**
-	 * Visit a parse tree produced by the `ArreglosAsignation` labeled alternative
-	 * in {@see GrammarParser::i()}.
-	 *
-	 * @param Context\ArreglosAsignationContext $context The parse tree.
-	 *
-	 * @return mixed The visitor result.
-	 */
-	public function visitArreglosAsignation(Context\ArreglosAsignationContext $context);
-
-	/**
-	 * Visit a parse tree produced by the `ArreglosDeclarationD` labeled alternative
-	 * in {@see GrammarParser::i()}.
-	 *
-	 * @param Context\ArreglosDeclarationDContext $context The parse tree.
-	 *
-	 * @return mixed The visitor result.
-	 */
-	public function visitArreglosDeclarationD(Context\ArreglosDeclarationDContext $context);
-
-	/**
-	 * Visit a parse tree produced by the `ArreglosAsignationD` labeled alternative
-	 * in {@see GrammarParser::i()}.
-	 *
-	 * @param Context\ArreglosAsignationDContext $context The parse tree.
-	 *
-	 * @return mixed The visitor result.
-	 */
-	public function visitArreglosAsignationD(Context\ArreglosAsignationDContext $context);
-
-	/**
 	 * Visit a parse tree produced by the `DFunction` labeled alternative
 	 * in {@see GrammarParser::i()}.
 	 *
@@ -180,6 +148,16 @@ interface GrammarVisitor extends ParseTreeVisitor
 	 * @return mixed The visitor result.
 	 */
 	public function visitSentenciaReturn(Context\SentenciaReturnContext $context);
+
+	/**
+	 * Visit a parse tree produced by the `LlamarFuncion` labeled alternative
+	 * in {@see GrammarParser::i()}.
+	 *
+	 * @param Context\LlamarFuncionContext $context The parse tree.
+	 *
+	 * @return mixed The visitor result.
+	 */
+	public function visitLlamarFuncion(Context\LlamarFuncionContext $context);
 
 	/**
 	 * Visit a parse tree produced by the `SentenciaContinue` labeled alternative
@@ -238,6 +216,15 @@ interface GrammarVisitor extends ParseTreeVisitor
 	public function visitFuncType(Context\FuncTypeContext $context);
 
 	/**
+	 * Visit a parse tree produced by {@see GrammarParser::llamadaFuncion()}.
+	 *
+	 * @param Context\LlamadaFuncionContext $context The parse tree.
+	 *
+	 * @return mixed The visitor result.
+	 */
+	public function visitLlamadaFuncion(Context\LlamadaFuncionContext $context);
+
+	/**
 	 * Visit a parse tree produced by {@see GrammarParser::retornar()}.
 	 *
 	 * @param Context\RetornarContext $context The parse tree.
@@ -274,22 +261,13 @@ interface GrammarVisitor extends ParseTreeVisitor
 	public function visitListaParametros(Context\ListaParametrosContext $context);
 
 	/**
-	 * Visit a parse tree produced by {@see GrammarParser::bloqueFuncion()}.
+	 * Visit a parse tree produced by {@see GrammarParser::accesoArreglo()}.
 	 *
-	 * @param Context\BloqueFuncionContext $context The parse tree.
-	 *
-	 * @return mixed The visitor result.
-	 */
-	public function visitBloqueFuncion(Context\BloqueFuncionContext $context);
-
-	/**
-	 * Visit a parse tree produced by {@see GrammarParser::declaracionArreglosD()}.
-	 *
-	 * @param Context\DeclaracionArreglosDContext $context The parse tree.
+	 * @param Context\AccesoArregloContext $context The parse tree.
 	 *
 	 * @return mixed The visitor result.
 	 */
-	public function visitDeclaracionArreglosD(Context\DeclaracionArreglosDContext $context);
+	public function visitAccesoArreglo(Context\AccesoArregloContext $context);
 
 	/**
 	 * Visit a parse tree produced by {@see GrammarParser::listaValores()}.
@@ -299,51 +277,6 @@ interface GrammarVisitor extends ParseTreeVisitor
 	 * @return mixed The visitor result.
 	 */
 	public function visitListaValores(Context\ListaValoresContext $context);
-
-	/**
-	 * Visit a parse tree produced by {@see GrammarParser::asignacionArreglosD()}.
-	 *
-	 * @param Context\AsignacionArreglosDContext $context The parse tree.
-	 *
-	 * @return mixed The visitor result.
-	 */
-	public function visitAsignacionArreglosD(Context\AsignacionArreglosDContext $context);
-
-	/**
-	 * Visit a parse tree produced by {@see GrammarParser::accesoArreglosD()}.
-	 *
-	 * @param Context\AccesoArreglosDContext $context The parse tree.
-	 *
-	 * @return mixed The visitor result.
-	 */
-	public function visitAccesoArreglosD(Context\AccesoArreglosDContext $context);
-
-	/**
-	 * Visit a parse tree produced by {@see GrammarParser::declaracionArreglos()}.
-	 *
-	 * @param Context\DeclaracionArreglosContext $context The parse tree.
-	 *
-	 * @return mixed The visitor result.
-	 */
-	public function visitDeclaracionArreglos(Context\DeclaracionArreglosContext $context);
-
-	/**
-	 * Visit a parse tree produced by {@see GrammarParser::asignacionArreglos()}.
-	 *
-	 * @param Context\AsignacionArreglosContext $context The parse tree.
-	 *
-	 * @return mixed The visitor result.
-	 */
-	public function visitAsignacionArreglos(Context\AsignacionArreglosContext $context);
-
-	/**
-	 * Visit a parse tree produced by {@see GrammarParser::accesoArreglos()}.
-	 *
-	 * @param Context\AccesoArreglosContext $context The parse tree.
-	 *
-	 * @return mixed The visitor result.
-	 */
-	public function visitAccesoArreglos(Context\AccesoArreglosContext $context);
 
 	/**
 	 * Visit a parse tree produced by {@see GrammarParser::sentenciaFor()}.
@@ -579,6 +512,36 @@ interface GrammarVisitor extends ParseTreeVisitor
 	public function visitToFactor(Context\ToFactorContext $context);
 
 	/**
+	 * Visit a parse tree produced by the `ArrayLit` labeled alternative
+	 * in {@see GrammarParser::factor()}.
+	 *
+	 * @param Context\ArrayLitContext $context The parse tree.
+	 *
+	 * @return mixed The visitor result.
+	 */
+	public function visitArrayLit(Context\ArrayLitContext $context);
+
+	/**
+	 * Visit a parse tree produced by the `ArrayLit2D` labeled alternative
+	 * in {@see GrammarParser::factor()}.
+	 *
+	 * @param Context\ArrayLit2DContext $context The parse tree.
+	 *
+	 * @return mixed The visitor result.
+	 */
+	public function visitArrayLit2D(Context\ArrayLit2DContext $context);
+
+	/**
+	 * Visit a parse tree produced by the `ArregloAcceso` labeled alternative
+	 * in {@see GrammarParser::factor()}.
+	 *
+	 * @param Context\ArregloAccesoContext $context The parse tree.
+	 *
+	 * @return mixed The visitor result.
+	 */
+	public function visitArregloAcceso(Context\ArregloAccesoContext $context);
+
+	/**
 	 * Visit a parse tree produced by the `GroupedExpression` labeled alternative
 	 * in {@see GrammarParser::factor()}.
 	 *
@@ -659,86 +622,6 @@ interface GrammarVisitor extends ParseTreeVisitor
 	public function visitNilLit(Context\NilLitContext $context);
 
 	/**
-	 * Visit a parse tree produced by the `IdentifierR` labeled alternative
-	 * in {@see GrammarParser::factor()}.
-	 *
-	 * @param Context\IdentifierRContext $context The parse tree.
-	 *
-	 * @return mixed The visitor result.
-	 */
-	public function visitIdentifierR(Context\IdentifierRContext $context);
-
-	/**
-	 * Visit a parse tree produced by the `ArregloAccesoR` labeled alternative
-	 * in {@see GrammarParser::factor()}.
-	 *
-	 * @param Context\ArregloAccesoRContext $context The parse tree.
-	 *
-	 * @return mixed The visitor result.
-	 */
-	public function visitArregloAccesoR(Context\ArregloAccesoRContext $context);
-
-	/**
-	 * Visit a parse tree produced by the `ArregloAccesoDR` labeled alternative
-	 * in {@see GrammarParser::factor()}.
-	 *
-	 * @param Context\ArregloAccesoDRContext $context The parse tree.
-	 *
-	 * @return mixed The visitor result.
-	 */
-	public function visitArregloAccesoDR(Context\ArregloAccesoDRContext $context);
-
-	/**
-	 * Visit a parse tree produced by the `IdentifierD` labeled alternative
-	 * in {@see GrammarParser::factor()}.
-	 *
-	 * @param Context\IdentifierDContext $context The parse tree.
-	 *
-	 * @return mixed The visitor result.
-	 */
-	public function visitIdentifierD(Context\IdentifierDContext $context);
-
-	/**
-	 * Visit a parse tree produced by the `ArregloAccesoD` labeled alternative
-	 * in {@see GrammarParser::factor()}.
-	 *
-	 * @param Context\ArregloAccesoDContext $context The parse tree.
-	 *
-	 * @return mixed The visitor result.
-	 */
-	public function visitArregloAccesoD(Context\ArregloAccesoDContext $context);
-
-	/**
-	 * Visit a parse tree produced by the `ArregloAccesoDD` labeled alternative
-	 * in {@see GrammarParser::factor()}.
-	 *
-	 * @param Context\ArregloAccesoDDContext $context The parse tree.
-	 *
-	 * @return mixed The visitor result.
-	 */
-	public function visitArregloAccesoDD(Context\ArregloAccesoDDContext $context);
-
-	/**
-	 * Visit a parse tree produced by the `Identifier` labeled alternative
-	 * in {@see GrammarParser::factor()}.
-	 *
-	 * @param Context\IdentifierContext $context The parse tree.
-	 *
-	 * @return mixed The visitor result.
-	 */
-	public function visitIdentifier(Context\IdentifierContext $context);
-
-	/**
-	 * Visit a parse tree produced by the `ArregloAcceso` labeled alternative
-	 * in {@see GrammarParser::factor()}.
-	 *
-	 * @param Context\ArregloAccesoContext $context The parse tree.
-	 *
-	 * @return mixed The visitor result.
-	 */
-	public function visitArregloAcceso(Context\ArregloAccesoContext $context);
-
-	/**
 	 * Visit a parse tree produced by the `NowFunc` labeled alternative
 	 * in {@see GrammarParser::factor()}.
 	 *
@@ -779,6 +662,44 @@ interface GrammarVisitor extends ParseTreeVisitor
 	public function visitTypeFunc(Context\TypeFuncContext $context);
 
 	/**
+	 * Visit a parse tree produced by the `LlamarFuncionF` labeled alternative
+	 * in {@see GrammarParser::factor()}.
+	 *
+	 * @param Context\LlamarFuncionFContext $context The parse tree.
+	 *
+	 * @return mixed The visitor result.
+	 */
+	public function visitLlamarFuncionF(Context\LlamarFuncionFContext $context);
+
+	/**
+	 * Visit a parse tree produced by the `Identifier` labeled alternative
+	 * in {@see GrammarParser::factor()}.
+	 *
+	 * @param Context\IdentifierContext $context The parse tree.
+	 *
+	 * @return mixed The visitor result.
+	 */
+	public function visitIdentifier(Context\IdentifierContext $context);
+
+	/**
+	 * Visit a parse tree produced by {@see GrammarParser::arrayLiteral()}.
+	 *
+	 * @param Context\ArrayLiteralContext $context The parse tree.
+	 *
+	 * @return mixed The visitor result.
+	 */
+	public function visitArrayLiteral(Context\ArrayLiteralContext $context);
+
+	/**
+	 * Visit a parse tree produced by {@see GrammarParser::arrayLiteral2D()}.
+	 *
+	 * @param Context\ArrayLiteral2DContext $context The parse tree.
+	 *
+	 * @return mixed The visitor result.
+	 */
+	public function visitArrayLiteral2D(Context\ArrayLiteral2DContext $context);
+
+	/**
 	 * Visit a parse tree produced by {@see GrammarParser::tipos()}.
 	 *
 	 * @param Context\TiposContext $context The parse tree.
@@ -786,6 +707,33 @@ interface GrammarVisitor extends ParseTreeVisitor
 	 * @return mixed The visitor result.
 	 */
 	public function visitTipos(Context\TiposContext $context);
+
+	/**
+	 * Visit a parse tree produced by {@see GrammarParser::tipoArray()}.
+	 *
+	 * @param Context\TipoArrayContext $context The parse tree.
+	 *
+	 * @return mixed The visitor result.
+	 */
+	public function visitTipoArray(Context\TipoArrayContext $context);
+
+	/**
+	 * Visit a parse tree produced by {@see GrammarParser::tipoArray2D()}.
+	 *
+	 * @param Context\TipoArray2DContext $context The parse tree.
+	 *
+	 * @return mixed The visitor result.
+	 */
+	public function visitTipoArray2D(Context\TipoArray2DContext $context);
+
+	/**
+	 * Visit a parse tree produced by {@see GrammarParser::tipoBase()}.
+	 *
+	 * @param Context\TipoBaseContext $context The parse tree.
+	 *
+	 * @return mixed The visitor result.
+	 */
+	public function visitTipoBase(Context\TipoBaseContext $context);
 
 	/**
 	 * Visit a parse tree produced by {@see GrammarParser::simboloAsignacion()}.

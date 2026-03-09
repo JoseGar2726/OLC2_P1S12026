@@ -1,13 +1,21 @@
 grammar Grammar;
 
-p
-    : bMain EOF     # Programa
+programa
+    : topLevel* EOF
+    ;
+
+topLevel
+    : funcion
+    | mainFuncion
+    | declaracion
+    | declaracionConst
     ;
 
 
-bMain
+mainFuncion
     : FUNC MAIN LPAREN RPAREN bloque #BloqueMain
     ;
+
 i
     : imprimir #FuncionImprimir  
     | declaracion #Declaration
@@ -18,12 +26,9 @@ i
     | sentenciaSwitch #SwitchSentencia
     | sentenciaFor #ForSentencia
     | expFor #IncDec
-    | declaracionArreglos #ArreglosDeclaration
-    | asignacionArreglos #ArreglosAsignation
-    | declaracionArreglosD #ArreglosDeclarationD
-    | asignacionArreglosD #ArreglosAsignationD
     | funcion #DFunction
     | retornar #SentenciaReturn
+    | llamadaFuncion #LlamarFuncion
     | CONTINUE #SentenciaContinue
     | BREAK #SentenciaBreak
     ;
@@ -44,12 +49,17 @@ funcType
     : TYPEOF LPAREN IDENTIFICADOR RPAREN
     ;
 
+llamadaFuncion
+    : IDENTIFICADOR LPAREN listaExpr? RPAREN
+    ;
+
 retornar
-    : RETURN listaExpr;
+    : RETURN listaExpr?;
 
 funcion
-    : FUNC IDENTIFICADOR LPAREN listaParametros? RPAREN LPAREN listaRetorno RPAREN bloqueFuncion
-    | FUNC IDENTIFICADOR LPAREN listaParametros? RPAREN tipos bloqueFuncion
+    : FUNC IDENTIFICADOR LPAREN listaParametros? RPAREN LPAREN listaRetorno RPAREN bloque
+    | FUNC IDENTIFICADOR LPAREN listaParametros? RPAREN tipos bloque
+    | FUNC IDENTIFICADOR LPAREN listaParametros? RPAREN bloque
     ;
 
 listaRetorno
@@ -60,36 +70,13 @@ listaParametros
     : IDENTIFICADOR tipos (COMMA IDENTIFICADOR tipos)*
     ;
 
-bloqueFuncion
-    : LBRACE (i SEMICOLON?)* RBRACE
-    ;
-
-declaracionArreglosD
-    : VAR IDENTIFICADOR LCOR logExpr RCOR LCOR logExpr RCOR tipos (ASSIGN LCOR logExpr RCOR LCOR logExpr RCOR tipos LBRACE listaValores RBRACE)?
+accesoArreglo
+    : IDENTIFICADOR LCOR logExpr RCOR
+    | IDENTIFICADOR LCOR logExpr RCOR LCOR logExpr RCOR
     ;
 
 listaValores
-    : (LBRACE listaExpr RBRACE COMMA)*
-    ;
-
-asignacionArreglosD
-    : accesoArreglosD ASSIGN logExpr
-    ;
-
-accesoArreglosD
-    : IDENTIFICADOR LCOR logExpr RCOR LCOR logExpr RCOR
-    ;
-
-declaracionArreglos
-    : VAR IDENTIFICADOR LCOR logExpr RCOR tipos (ASSIGN LCOR logExpr RCOR tipos LBRACE listaExpr RBRACE)?
-    ;
-
-asignacionArreglos
-    : accesoArreglos ASSIGN logExpr
-    ;
-
-accesoArreglos
-    : IDENTIFICADOR LCOR logExpr RCOR
+    : LBRACE listaExpr RBRACE (COMMA  LBRACE listaExpr RBRACE)*
     ;
 
 sentenciaFor
@@ -137,7 +124,7 @@ bloque
     ;
 
 asignacion
-    : IDENTIFICADOR simboloAsignacion logExpr
+    : (IDENTIFICADOR | accesoArreglo) simboloAsignacion logExpr
     ;
 
 imprimir
@@ -186,30 +173,48 @@ term
     ;
 
 factor
-    : LPAREN logExpr RPAREN # GroupedExpression
-    | MINUS factor # UnaryExpression
+    : arrayLiteral #ArrayLit
+    | arrayLiteral2D #ArrayLit2D
+    | accesoArreglo #ArregloAcceso
+    | LPAREN logExpr RPAREN # GroupedExpression
+    | op=(MINUS | NEG) factor # UnaryExpression
     | FLOAT #FloatLit
     | ENTERO #EnteroLit
     | BOOL  #BoolLit
     | RUNE #RuneLit
     | STR #StrLit
     | NIL #NilLit
-    | REF IDENTIFICADOR #IdentifierR
-    | REF accesoArreglos #ArregloAccesoR
-    | REF accesoArreglosD #ArregloAccesoDR
-    | MULT IDENTIFICADOR #IdentifierD
-    | MULT accesoArreglos #ArregloAccesoD
-    | MULT accesoArreglosD #ArregloAccesoDD
-    | IDENTIFICADOR #Identifier
-    | accesoArreglos #ArregloAcceso
-    | accesoArreglosD #ArregloAccesoD
     | funcNow #NowFunc
     | funcLen #LenFunc
     | funcSub #SubFunc
     | funcType #TypeFunc
+    | llamadaFuncion #LlamarFuncionF
+    | IDENTIFICADOR #Identifier
+    ;
+
+arrayLiteral
+    : LCOR logExpr RCOR tipoBase LBRACE listaExpr RBRACE
+    ;
+
+arrayLiteral2D
+    : LCOR logExpr RCOR LCOR logExpr RCOR tipoBase LBRACE listaValores RBRACE
     ;
 
 tipos
+    : tipoBase
+    | tipoArray
+    | tipoArray2D
+    ;
+
+tipoArray
+    : LCOR logExpr RCOR tipoBase
+    ;
+
+tipoArray2D
+    : LCOR logExpr RCOR LCOR logExpr RCOR tipoBase
+    ;
+
+tipoBase
     : INT_T
     | FLOAT_T
     | BOOL_T
@@ -243,8 +248,8 @@ NOW: 'now';
 SUBSTR: 'substr';
 TYPEOF: 'typeOf';
 
-INT_T : 'int';
-FLOAT_T : 'float';
+INT_T : 'int' | 'int32';
+FLOAT_T : 'float' | 'float32';
 BOOL_T : 'bool';
 RUNE_T : 'rune';
 STRING_T : 'string';
@@ -262,6 +267,7 @@ COLON : ':';
 SEMICOLON : ';';
 PLUS : '+';
 MINUS : '-';
+NEG: '!';
 MULT : '*';
 DIV : '/';
 MOD : '%';
