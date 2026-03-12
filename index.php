@@ -89,15 +89,17 @@
 
     <div class="topbar text-white d-flex align-items-center gap-2">
 
-        <button type="button" class="btn btn-light btn-sm">Nuevo Archivo</button>
-        <button type="button" class="btn btn-light btn-sm">Abrir Archivo</button>
-        <button type="button" class="btn btn-light btn-sm">Guardar Código</button>
+        <button type="button" id="nuevo" class="btn btn-light btn-sm">Nuevo Archivo</button>
+        <button type="button" id="abrir" class="btn btn-light btn-sm">Abrir Archivo</button>
+        <button type="button" id="guardar" class="btn btn-light btn-sm">Guardar Código</button>
 
         <div class="ms-auto">
             <button type="submit" class="btn btn-success btn-sm">Ejecutar</button>
         </div>
 
-        <button type="button" class="btn btn-warning btn-sm">Limpiar Consola</button>
+        <button type="button" id="limpiar" class="btn btn-warning btn-sm">Limpiar Consola</button>
+
+        <input type="file" id="cargaArchivo" accept=".txt" style="display:none"></input>
 
     </div>
 
@@ -248,6 +250,7 @@
 
             <div class="editor">
                 <textarea
+                    id = "editor"
                     name="expression"
                     placeholder="Escribe tu codigo aqui"
                 ><?php echo htmlspecialchars($input); ?></textarea>
@@ -301,7 +304,7 @@
             </ul>
             <div class="tab-content">
                 <div class="tab-pane fade show active" id="console">
-                    <div class = "console">
+                    <div class = "console" id="consolaSalida">
                         <?php echo nl2br(htmlspecialchars($output ?? "")) ?>
                     </div>
                 </div>
@@ -438,5 +441,59 @@
         </div>
     </div>
 </form>
+<script>
+    const editor = document.getElementById("editor");
+    const consolaSalida = document.getElementById("consolaSalida");
+
+    const nuevoBtn = document.getElementById("nuevo");
+    const abrirBtn = document.getElementById("abrir");
+    const guardarBtn = document.getElementById("guardar");
+    const limpiarBtn = document.getElementById("limpiar");
+
+    const cargarA = document.getElementById("cargaArchivo");
+
+    limpiarBtn.addEventListener("click", () => {
+        consolaSalida.innerHTML = "";
+    });
+
+    nuevoBtn.addEventListener("click", () => {
+        if(confirm("Al crear un nuevo archivo se perdera el contenido actual")){
+            editor.value = "";
+            consolaSalida.innerHTML = "";
+        }
+    });
+
+    guardarBtn.addEventListener("click", () => {
+        const text = editor.value;
+
+        const blob = new Blob([text], {type: "text/plain"});
+
+        const link = document.createElement("a");
+
+        link.href = URL.createObjectURL(blob);
+
+        link.download = "codigo.txt";
+
+        link.click();
+    });
+
+    abrirBtn.addEventListener("click", () => {
+        cargarA.click();
+    });
+
+    cargarA.addEventListener("change", (event) => {
+        const file = event.target.files[0];
+
+        if(!file) return;
+
+        const reader = new FileReader();
+
+        reader.onload = function(e){
+            editor.value = e.target.result;
+        };
+
+        reader.readAsText(file);
+    });
+</script>
 </body>
 </html>

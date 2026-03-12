@@ -320,6 +320,19 @@ class GrammarBaseListener implements GrammarListener
 	 *
 	 * The default implementation does nothing.
 	 */
+	public function enterArgumento(Context\ArgumentoContext $context): void {}
+
+	/**
+	 * {@inheritdoc}
+	 *
+	 * The default implementation does nothing.
+	 */
+	public function exitArgumento(Context\ArgumentoContext $context): void {}
+	/**
+	 * {@inheritdoc}
+	 *
+	 * The default implementation does nothing.
+	 */
 	public function enterRetornar(Context\RetornarContext $context): void {}
 
 	/**
@@ -367,6 +380,19 @@ class GrammarBaseListener implements GrammarListener
 	 * The default implementation does nothing.
 	 */
 	public function exitListaParametros(Context\ListaParametrosContext $context): void {}
+	/**
+	 * {@inheritdoc}
+	 *
+	 * The default implementation does nothing.
+	 */
+	public function enterParametro(Context\ParametroContext $context): void {}
+
+	/**
+	 * {@inheritdoc}
+	 *
+	 * The default implementation does nothing.
+	 */
+	public function exitParametro(Context\ParametroContext $context): void {}
 	/**
 	 * {@inheritdoc}
 	 *

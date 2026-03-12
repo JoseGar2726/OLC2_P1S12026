@@ -2,10 +2,18 @@
 
     class BreakException extends Exception {}
     class ContinueException extends Exception {}
+    class ReturnValue extends Exception {
+        public $value;
+
+        public function __construct($value){
+            $this->value = $value;
+        }
+    }
 
 use Context\AccesoArregloContext;
 use Context\AccesoArreglosContext;
 use Context\AccesoArreglosDContext;
+use Context\ArgumentoContext;
 use Context\ArrayLitContext;
 use Context\ArrayLiteral2DContext;
 use Context\ArrayLiteralContext;
@@ -129,8 +137,19 @@ use Context\RuneLitContext;
             }
 
             list($type, $index) = $location;
+
+            if ($type === 'callStack'){
+                $symbol = $this->callStack[$index][$id];
+
+                if(isset($symbol["ref"])){
+                    return $this->getSymbol($symbol["ref"]);
+                }
+
+                return $symbol;
+            }
+
             if ($type === 'scope') return $this->scopes[$index][$id];
-            if ($type === 'callStack') return $this->callStack[$index][$id];
+            
         }
 
         private function setSymbolValue($id, $value) {
@@ -138,7 +157,7 @@ use Context\RuneLitContext;
 
             if ($location === null) {
                 $this->addSemanticErrors(
-                    "Error semantico: variable '$id no definida'", null
+                    "Error semantico: variable '$id' no definida", null
                 );
                 return;
             }
@@ -154,7 +173,12 @@ use Context\RuneLitContext;
                 }
                 $this->scopes[$index][$id]["value"] = $value;
             } else {
-                $this->callStack[$index][$id]["value"] = $value;
+                $symbol = &$this->callStack[$index][$id];
+                if(isset($symbol["ref"])){
+                    $this->setSymbolValue($symbol["ref"], $value);
+                    return;
+                }
+                $symbol["value"] = $value;
             }
 
         }
@@ -286,15 +310,24 @@ use Context\RuneLitContext;
             }
 
             for($i=0; $i<count($args); $i++){
-                if($params[$i]["type"] === "int32"){
-                    $params[$i]["type"] = "int";
-                }
-                if($params[$i]["type"] === "float32"){
-                    $params[$i]["type"] = "float";
-                }
-                if(isset($params[$i]["type"]) && $args[$i]["type"] !== $params[$i]["type"]){
+                
+                $expectedType = $this->normalizeType($params[$i]["type"]);
+                $receivedType = $this->normalizeType($args[$i]["type"],
+                $args[$i]["subtype"] ?? null,
+                $args[$i]["rows"] ?? null,
+                $args[$i]["cols"] ?? null);
+
+                if(($params[$i]["pointer"] ?? false) && !isset($args[$i]["ref"])){
                     $this->addSemanticErrors(
-                        "Error semantico: argumento " . ($i + 1) . " de '$nombre' debe ser tipo '{$params[$i]["type"]}', recibido '{$args[$i]["type"]}'",
+                        "Error semantico: parametro '{$params[$i]["name"]}' requiere referencia (&)",
+                        $ctx
+                    );
+                    return ["type" => "nil", "value"=> null];
+                }
+
+                if(!($params[$i]["pointer"] ?? false) && $expectedType !== $receivedType){
+                    $this->addSemanticErrors(
+                        "Error semantico: argumento " . ($i + 1) . " de '$nombre' debe ser tipo '$expectedType', recibido '$receivedType'",
                         $ctx
                     );
                     return ["type" => "error", "value" => null];
@@ -305,45 +338,114 @@ use Context\RuneLitContext;
             array_push($this->callStack, []);
             array_push($this->scopeNames, $nombre);
 
+            $currentScope = &$this->callStack[count($this->callStack)-1];
+
             for ($i=0; $i<count($args); $i++){
                 $paramName = $func["params"][$i]["name"];
+                $isPointer = $func["params"][$i]["pointer"] ?? false;
 
-                $this->callStack[count($this->callStack)-1][$paramName] = [
-                    "type" => $args[$i]["type"],
-                    "value" => $args[$i]["value"]
-                ];
+                if(!$isPointer){
+                    $currentScope[$paramName] = [
+                        "type" => $args[$i]["type"],
+                        "value" => $args[$i]["value"] ?? null
+                    ];
+                } else{
+                    if(!isset($args[$i]["ref"])){
+                        $this->addSemanticErrors(
+                            "Error semantico: parametro '$paramName' requiere referencia (&)",
+                            $ctx
+                        );
+                        array_pop($this->callStack);
+                        array_pop($this->scopeNames);
+                        return ["type" => "nil", "value"=>null];
+                    }
+
+                    $currentScope[$paramName] = [
+                        "type" => $args[$i]["type"],
+                        "ref" => $args[$i]["ref"]
+                    ];
+                }
+
             }
 
             //Ejecutar
+            $previosReturn = $this->returnValue;
+
             $this->returnValue = null;
+
             try {
                 $this->visit($func["ctx"]->bloque());
-            } catch (Exception $e) {
-                if ($e->getMessage() !== "__RETURN__"){
-                    array_pop($this->callStack);
-                    throw $e;
-                }
+            } catch (ReturnValue $ret) {
+                array_pop($this->callStack);
+                array_pop($this->scopeNames);
+                return $ret->value;
             }
 
             $ret = $this->returnValue;
 
-            array_pop($this->callStack);
-            array_pop($this->scopeNames);
+            $this->returnValue = $previosReturn;
 
-            return $ret;
+            return $ret ?? ["type" => "nil", "value" => null];
+        }
+
+        //APUNTADORES
+        public function visitArgumento(ArgumentoContext $ctx){
+
+            $expr = $this->visit($ctx->logExpr());
+
+            if($ctx->REF() == null){
+                return $expr;
+            }
+
+            if(!isset($expr["id"])){
+                $this->addSemanticErrors(
+                    "Error semantico: '&' solo puede aplicarse a variables",
+                    $ctx
+                );
+                return ["type"=>"error", "value"=>null];
+            }
+
+            return [
+                "type" => $expr["type"],
+                "ref" => $expr["id"]
+            ];
+        }
+
+        private function normalizeType($type,$subtype=null,$rows=null,$cols=null){
+            $normalizeBase = function($t){
+                if($t === "int32") return 'int';
+                if($t === "float32") return 'float';
+                return $t;
+            };
+
+            if($type === 'array' && $subtype !== null){
+                $subtype = $normalizeBase($subtype);
+                return "[" . ($rows ?? "") . "]" . $subtype;
+            }
+
+            if($type === 'array2d' && $subtype !== null){
+                $subtype = $normalizeBase($subtype);
+                return "[" . ($rows ?? "") . "][" . ($cols ?? "") . "]" . $subtype;
+            }
+
+            return $normalizeBase($type);
         }
 
         //RETORNAR
         public function visitRetornar(RetornarContext $ctx){
-            $valores = $this->visit($ctx->listaExpr());
+            if($ctx->listaExpr() === null){
+                $value = ["type" => "nil", "value"=>null];
+            } else{
+                $valores = $this->visit($ctx->listaExpr());
 
-            if(count($valores) == 1){
-                $this->returnValue = $valores[0];
-            } else {
-                $this->returnValue = $valores;
+                if(count($valores) == 1){
+                    $value = $valores[0];
+                } else {
+                    $value = $valores;
+                }
             }
 
-            throw new Exception("__RETURN__");
+            throw new ReturnValue($value);
         }
 
         //BREAK Y CONTINUE
@@ -363,6 +465,8 @@ use Context\RuneLitContext;
             }
             //FOR WHILE
             if ($ctx->logExpr() !== null){
+                array_push($this->scopes, []);
+                array_push($this->scopeNames, "for");
                 while (true) {
                     $cond = $this->visit($ctx->logExpr());
 
@@ -385,12 +489,16 @@ use Context\RuneLitContext;
                     }
 
                 }
+                array_pop($this->scopes);
+                array_pop($this->scopeNames);
 
                 return null;
             }
 
             //FOR INFINITO
             if ($ctx->bloque() !== null){
+                array_push($this->scopes, []);
+                array_push($this->scopeNames, "for");
                 while (true) {
                     try {
                         $this->visit($ctx->bloque());
@@ -400,6 +508,8 @@ use Context\RuneLitContext;
                         continue;
                     }
                 }
+                array_pop($this->scopes);
+                array_pop($this->scopeNames);
             }
 
             return null;
@@ -409,6 +519,7 @@ use Context\RuneLitContext;
         public function visitForClasico(ForClasicoContext $ctx){
 
             array_push($this->scopes, []);
+            array_push($this->scopeNames, "for");
 
             if($ctx->declaracionCorta() !== null){
                 $this->visit($ctx->declaracionCorta());
@@ -443,6 +554,7 @@ use Context\RuneLitContext;
             }
 
             array_pop($this->scopes);
+            array_pop($this->scopeNames);
 
             return null;
         }
@@ -491,7 +603,7 @@ use Context\RuneLitContext;
 
             try {
                 foreach($cases as $case){
-                    $listaExpresiones = $case->listaExpr()->logExpr();
+                    $listaExpresiones = $case->listaExpr()->argumento();
 
                     foreach($listaExpresiones as $expresion){
                         $caseValue = $this->visit($expresion);
@@ -505,19 +617,26 @@ use Context\RuneLitContext;
                         }
 
                         if ($caseValue["value"] === $switchV["value"]){
+                            array_push($this->scopes, []);
+                            array_push($this->scopeNames, "case");
                             foreach($case->i() as $inst){
                                 $this->visit($inst);
                             }
-
+                            array_pop($this->scopes);
+                            array_pop($this->scopeNames);
                             return null;
                         }
                     }
                 }
 
                 if ($default !== null){
+                    array_push($this->scopes, []);
+                    array_push($this->scopeNames, "case");
                     foreach($default->i() as $inst){
                         $this->visit($inst);
                     }
+                    array_pop($this->scopes);
+                    array_pop($this->scopeNames);
                 }
             } catch (BreakException $e) {
                 return null;
@@ -528,39 +647,40 @@ use Context\RuneLitContext;
 
         //SENTENCIA IF
         public function visitSentenciaIf(SentenciaIfContext $ctx){
-            $condiciones = $ctx->logExpr();
-            $bloques = $ctx->bloque();
+            $condicion = $this->visit($ctx->logExpr());
 
-            $cantidadCondiciones = count($condiciones);
-
-            for ($i = 0; $i < $cantidadCondiciones; $i++){
-                $condicion = $this->visit($condiciones[$i]);
-
-                if($condicion["type"] === "nil"){
-                    $this->addSemanticErrors(
-                        "Error semantico: operacion con nil", $ctx
-                    );
-                    return null;
-                }
-
-                if ($condicion === null || !isset($condicion["type"]) || $condicion["type"] !== "bool"){
-                    $this->addSemanticErrors(
-                        "Error semantico: la condicion del if / else if debe de ser booleana",
-                        $ctx
-                    );
-                    $condicion = ["value" => false, "type" => "bool"];
-                }
-
-                if ($condicion["value"]){
-                    
-                    $this->visit($bloques[$i]);
-                    
-                    return null;
-                }
+            if($condicion === null || !isset($condicion["type"]) || $condicion["type"] !== "bool"){
+                $this->addSemanticErrors(
+                    "Error semantico: la condicion del if debe de ser booleana",
+                    $ctx
+                );
+                return null;
             }
 
-            if (count($bloques) > $cantidadCondiciones){
-                $this->visit($bloques[$cantidadCondiciones]);
+            if ($condicion["value"]) {
+                array_push($this->scopes, []);
+                array_push($this->scopeNames, "if");
+
+                try {
+                    $this->visit($ctx->bloque(0));
+                } finally{
+                    array_pop($this->scopes);
+                    array_pop($this->scopeNames);
+                }
+                
+            }
+
+            else if($ctx->ELSE() !== null){
+                array_push($this->scopes, []);
+                array_push($this->scopeNames, "else");
+
+                try {
+                    $this->visit($ctx->bloque(1));
+                } finally {
+                    array_pop($this->scopes);
+                    array_pop($this->scopeNames);
+                }
+
             }
 
             return null;
@@ -578,21 +698,6 @@ use Context\RuneLitContext;
             }
         }
 
-        private function createDefaultArray($size, $subtype){
-            $default = $this->defaultValue($subtype);
-
-            $arr = [];
-
-            for($i = 0; $i < $size; $i++){
-                $arr[] = [
-                    "type" => $subtype,
-                    "value" => $default
-                ];
-            }
-
-            return $arr;
-        }
-
         //DECLARACION CONSTANTES
         public function visitDeclaracionConst(DeclaracionConstContext $ctx){
 
@@ -601,6 +706,10 @@ use Context\RuneLitContext;
 
             // Determinar tipo declarado
             $tipoVariable = null;
+            $baseType = null;
+
+            $rows = null;
+            $cols = null;
 
             $tipoCtx = $ctx->tipos();
             if($tipoCtx->tipoBase()){
@@ -609,6 +718,7 @@ use Context\RuneLitContext;
                 if($tipoVariable === "float32") $tipoVariable = "float";
             } elseif ($tipoCtx->tipoArray()) {
                 $tipoVariable = "array";
+                $rows = $this->visit($tipoCtx->tipoArray()->logExpr())["value"];
             } elseif ($tipoCtx->tipoArray2D()) {
                 $tipoVariable = "array2d";
             }
@@ -668,6 +778,8 @@ use Context\RuneLitContext;
                 }
 
                 $baseType = $tipoCtx->tipoArray2D()->tipoBase()->getText();
+                $rows = $this->visit($tipoCtx->tipoArray2D()->logExpr(0))["value"];
+                $cols = $this->visit($tipoCtx->tipoArray2D()->logExpr(1))["value"];
                 if($baseType === "int32") $baseType = "int";
                 if($baseType === "float32") $baseType = "float";
 
@@ -687,6 +799,9 @@ use Context\RuneLitContext;
             $this->declareSymbol($id, [
                 'type' => $tipoVariable,
                 'value' => $valorInicial["value"],
+                'subtype' => $baseType,
+                'rows' => $rows,
+                'cols' => $cols,
                 'const' => true
             ], $ctx);
 
@@ -778,6 +893,12 @@ use Context\RuneLitContext;
 
                 $simbolo = $this->getSymbol($id);
 
+                if(isset($simbolo["ref"])){
+                    $refName = $simbolo["ref"];
+                    $simbolo = $this->getSymbol($refName);
+                    $id = $refName;
+                }
+
                 if($simbolo === null){
                     $this->addSemanticErrors(
                         "Error semantico: la variable '$id' no existe",
@@ -845,7 +966,7 @@ use Context\RuneLitContext;
                     return null;
                 }
 
-                $array = $simbolo["value"];
+                $array = &$simbolo["value"];
                 $indices = [];
 
                 foreach($acceso->logExpr() as $expr){
@@ -956,7 +1077,7 @@ use Context\RuneLitContext;
         public function visitDeclaracionCorta(DeclaracionCortaContext $ctx){
 
             $ids = $ctx->listaId()->IDENTIFICADOR();
-            $expresiones = $ctx->listaExpr()->logExpr();
+            $expresiones = $ctx->listaExpr()->argumento();
 
             $values = [];
 
@@ -1004,9 +1125,21 @@ use Context\RuneLitContext;
                     continue;
                 }
 
+                $subtype = null;
+                $cols = null;
+                $rows = null;
+                if($res["type"] === "array" || $res["type"] === "array2d"){
+                    $subtype = $res["subtype"] ?? null;
+                    $rows = $res["rows"] ?? null;
+                    $cols = $res["cols"] ?? null;
+                }
+
                 $this->declareSymbol($name,[
                     "type" => $res["type"],
                     "value" => $res["value"],
+                    "subtype" => $subtype,
+                    "cols" => $cols,
+                    "rows" => $rows,
                     "const" => false
                 ], $ctx);
             }
@@ -1021,13 +1154,16 @@ use Context\RuneLitContext;
             $listaValores = $ctx->listaExpr();
             
             $ids = $listaIds->IDENTIFICADOR();
-            $expresiones = $listaValores !== null ? $listaValores->logExpr() : [];
+            $expresiones = $listaValores !== null ? $listaValores->argumento() : [];
 
             $tipoCtx = $ctx->tipos();
 
             $type = null;
-            $baseType = null;
+            $subtype = null;
             $defaultValue = null;
+
+            $colsV = null;
+            $rowsV = null;
 
             if($tipoCtx->tipoBase()){
                 $type = $tipoCtx->tipoBase()->getText();
@@ -1051,50 +1187,48 @@ use Context\RuneLitContext;
             }
 
             elseif($tipoCtx->tipoArray()){
-                $sizeExpr = $tipoCtx->tipoArray()->logExpr();
-                $size = $this->visit($sizeExpr)["value"];
-
-                $baseType = $tipoCtx->tipoArray()->tipoBase()->getText();
-
-                if($baseType === "int32"){
-                    $baseType = "int";
+                $length = $this->visit($tipoCtx->tipoArray()->logExpr())["value"];
+                $rowsV = $length;
+                $subtype = $tipoCtx->tipoArray()->tipoBase()->getText();
+                if($subtype === "int32"){
+                    $subtype = "int";
                 }
-                if($baseType === "float32"){
-                    $baseType = "float";
+                if($subtype === "float32"){
+                    $subtype = "float";
                 }
 
                 $type = "array";
 
-                $baseDefault = $this->defaultValue($baseType);
+                $baseDefault = $this->defaultValue($subtype);
 
                 $array = [];
-
-                for($i=0;$i<$size;$i++){
+                for($i=0; $i<$length; $i++){
                     $array[$i] = [
-                        "value"=>$baseDefault,
-                        "type"=>$baseType
+                        "value" => $baseDefault,
+                        "type" => $subtype
                     ];
                 }
-
                 $defaultValue = $array;
             }
-
             elseif ($tipoCtx->tipoArray2D()) {
                 $size1 = $this->visit($tipoCtx->tipoArray2D()->logExpr(0))["value"];
                 $size2 = $this->visit($tipoCtx->tipoArray2D()->logExpr(1))["value"];
 
-                $baseType = $tipoCtx->tipoArray2D()->tipoBase()->getText();
+                $rowsV = $size1;
+                $colsV = $size2;
 
-                if($baseType === "int32"){
-                    $baseType = "int";
+                $subtype = $tipoCtx->tipoArray2D()->tipoBase()->getText();
+
+                if($subtype === "int32"){
+                    $subtype = "int";
                 }
-                if($baseType === "float32"){
-                    $baseType = "float";
+                if($subtype === "float32"){
+                    $subtype = "float";
                 }
 
                 $type = "array2d";
 
-                $baseDefault = $this->defaultValue($baseType);
+                $baseDefault = $this->defaultValue($subtype);
 
                 $matriz = [];
 
@@ -1104,7 +1238,7 @@ use Context\RuneLitContext;
                     for($j=0;$j<$size2;$j++){
                         $fila[$j] = [
                             "value" => $baseDefault,
-                            "type" => $baseType
+                            "type" => $subtype
                         ];  
                     }
 
@@ -1143,6 +1277,9 @@ use Context\RuneLitContext;
                 $this->declareSymbol($name, [
                     'value' => $value,
                     'type' => $type,
+                    'subtype' => $subtype,
+                    'cols' => $colsV,
+                    'rows' => $rowsV,
                     'const' => false
                 ], $ctx);
             }
@@ -1165,7 +1302,7 @@ use Context\RuneLitContext;
 
             $valores = [];
 
-            foreach($lista->logExpr() as $e){
+            foreach($lista->argumento() as $e){
                 $resultado = $this->visit($e);
 
                 if($resultado === null){
@@ -1203,7 +1340,7 @@ use Context\RuneLitContext;
 
         public function visitBloque(BloqueContext $ctx){
             array_push($this->scopes, []);
-
+            $returned = false;
             try {
                 foreach ($ctx->i() as $instruction) {
                     if(method_exists($instruction, "funcion") && $instruction->funcion() !== null){
@@ -1211,19 +1348,12 @@ use Context\RuneLitContext;
                     }
                     $this->visit($instruction);
                 }
-            } catch (Exception $e) {
-                if ($e->getMessage() === "__RETURN__"){
-                    array_pop($this->scopes);
-                    return;
-                }
+            } finally {
                 array_pop($this->scopes);
-                throw $e;
             }
-
-            $this->collectSymbols();
-
-            array_pop($this->scopes);
-
+            if(!$returned){
+                $this->collectSymbols();
+            }
             return null;
         }
 
@@ -1276,13 +1406,37 @@ use Context\RuneLitContext;
             $params = [];
 
             if($ctx->listaParametros() !== null){
-                $ids = $ctx->listaParametros()->IDENTIFICADOR();
-                $tipos = $ctx->listaParametros()->tipos();
 
-                for ($i=0; $i<count($ids); $i++){
+                foreach($ctx->listaParametros()->parametro() as $p){
+                    $paramName = $p->IDENTIFICADOR()->getText();
+                    $paramTypeRaw = $p->tipos()->getText();
+
+                    // Detectar arrays 1D
+                    if (preg_match('/\[(\d+)\]\[(\d+)\](\w+)/', $paramTypeRaw, $matches)) {
+                        
+                        $rows = intval($matches[1]);
+                        $cols = intval($matches[2]);
+                        $subtype = $matches[3];
+                        $paramType = $this->normalizeType('array2d', $subtype, $rows, $cols);
+
+                    } 
+                    // Detectar arrays 2D
+                    elseif (preg_match('/\[(\d+)\](\w+)/', $paramTypeRaw, $matches)) {
+
+                        $rows = intval($matches[1]);
+                        $subtype = $matches[2];
+                        $paramType = $this->normalizeType('array', $subtype, $rows);
+
+                    } else {
+                        $paramType = $this->normalizeType($paramTypeRaw);
+                    }
+
+                    $isPointer = $p->MULT() !== null;
+
                     $params[] = [
-                        "name" => $ids[$i]->getText(),
-                        "type" => $tipos[$i]->getText()
+                        "name" => $paramName,
+                        "type" => $paramType,
+                        "pointer" => $isPointer
                     ];
                 }
             }
@@ -1291,12 +1445,11 @@ use Context\RuneLitContext;
             $returns = [];
 
             if ($ctx->listaRetorno() !== null){
-                $tiposRet = $ctx->listaRetorno()->tipos();
-                foreach ($tiposRet as $t){
-                    $returns[] = $t->getText();
+                foreach($ctx->listaRetorno()->tipos() as $t){
+                    $returns[] = $this->normalizeType($t->getText());
                 }
             } elseif ($ctx->tipos() !== null){
-                $returns[] = $ctx->tipos()->getText();
+                $returns[] = $this->normalizeType($ctx->tipos()->getText());
             }
 
             $this->functions[$nombre] = [
@@ -1393,7 +1546,7 @@ use Context\RuneLitContext;
         public function visitListaExpr(ListaExprContext $ctx){
             $resultados = [];
 
-            $expresiones = $ctx->logExpr();
+            $expresiones = $ctx->argumento();
 
             foreach ($expresiones as $expr){
                 $res = $this->visit($expr);
@@ -1474,7 +1627,7 @@ use Context\RuneLitContext;
                     'string' => ['string'=>'bool'],
                 ],
 
-                '>=' => [
+                '<=' => [
                     'int' => ['int'=>'bool', 'float'=>'bool', 'rune'=>'bool'],
                     'float' => ['int'=>'bool', 'float'=>'bool', 'rune'=>'bool'],
                     'rune' => ['int'=>'bool', 'float'=>'bool', 'rune'=>'bool'],
@@ -1670,7 +1823,7 @@ use Context\RuneLitContext;
             }
 
             if($op === '||'){
-                if(!$left["value"]){
+                if($left["value"]){
                     return ["type" => "bool", "value"=> true];
                 }
 
@@ -1784,7 +1937,11 @@ use Context\RuneLitContext;
                 ];
             }
 
-            return $symbol;
+            $result = $symbol;
+
+            $result["id"] = $identificador;
+
+            return $result;
         }
        
         //LITERALES
@@ -1792,7 +1949,7 @@ use Context\RuneLitContext;
         public function visitAccesoArreglo(AccesoArregloContext $ctx){
             $name = $ctx->IDENTIFICADOR()->getText();
 
-            $symbol = $this->lookupSymbol($name);
+            $symbol = $this->getSymbol($name);
 
             if(!$symbol){
                 $this->addSemanticErrors(
@@ -1802,12 +1959,37 @@ use Context\RuneLitContext;
                 return ["type"=>"nil", "value"=>null];
             }
 
-            $array = $symbol["value"];
+            if(isset($symbol["ref"])){
+                $symbol = $this->getSymbol($symbol["ref"]);
+            }
 
+            $array = &$symbol["value"];
+            
+            $indices = [];
+            foreach($ctx->logExpr() as $expr){
+                $indices[] = $this->visit($expr)["value"];
+            }
+            
             $index1 = $this->visit($ctx->logExpr(0))["value"];
+
+            if(!isset($array[$index1])){
+                $this->addSemanticErrors(
+                    "Error semantico: indice $index1 fuera de rango",
+                    $ctx
+                );
+                return ["type"=>"nil", "value"=>null];
+            }
 
             if($ctx->logExpr(1)){
                 $index2 = $this->visit($ctx->logExpr(1))["value"];
+
+                if(!isset($array[$index1][$index2])){
+                    $this->addSemanticErrors(
+                        "Error semantico: indice [$index1][$index2] fuera de rango",
+                        $ctx
+                    );
+                    return ["type"=>"nil", "value"=>null];
+                }
 
                 return $array[$index1][$index2];
             }
@@ -1821,10 +2003,17 @@ use Context\RuneLitContext;
 
             $tipo = $ctx->tipoBase()->getText();
 
+            if($tipo === "int32"){
+                $tipo = "int";
+            }
+            if($tipo === "float32"){
+                $tipo = "float";
+            }
+
             $values = [];
 
             if($ctx->listaExpr()){
-                foreach($ctx->listaExpr()->logExpr() as $expr){
+                foreach($ctx->listaExpr()->argumento() as $expr){
                     $res = $this->visit($expr);
 
                     if($res["type"] !== $tipo){
@@ -1856,6 +2045,7 @@ use Context\RuneLitContext;
                 "type" => "array",
                 "subtype" => $tipo,
                 "size" => $size,
+                "rows" => $size,
                 "value" => $values
             ];
 
@@ -1867,12 +2057,19 @@ use Context\RuneLitContext;
 
             $tipo = $ctx->tipoBase()->getText();
 
+            if($tipo === "int32"){
+                $tipo = "int";
+            }
+            if($tipo === "float32"){
+                $tipo = "float";
+            }
+
             $matriz = [];
 
             foreach($ctx->listaValores()->listaExpr() as $fila){
                 $row = [];
 
-                foreach($fila->logExpr() as $expr){
+                foreach($fila->argumento() as $expr){
                     $row[] = $this->visit($expr);
                 }
 

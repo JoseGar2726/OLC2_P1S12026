@@ -274,6 +274,16 @@ interface GrammarListener extends ParseTreeListener {
 	 */
 	public function exitLlamadaFuncion(Context\LlamadaFuncionContext $context): void;
 	/**
+	 * Enter a parse tree produced by {@see GrammarParser::argumento()}.
+	 * @param $context The parse tree.
+	 */
+	public function enterArgumento(Context\ArgumentoContext $context): void;
+	/**
+	 * Exit a parse tree produced by {@see GrammarParser::argumento()}.
+	 * @param $context The parse tree.
+	 */
+	public function exitArgumento(Context\ArgumentoContext $context): void;
+	/**
 	 * Enter a parse tree produced by {@see GrammarParser::retornar()}.
 	 * @param $context The parse tree.
 	 */
@@ -313,6 +323,16 @@ interface GrammarListener extends ParseTreeListener {
 	 * @param $context The parse tree.
 	 */
 	public function exitListaParametros(Context\ListaParametrosContext $context): void;
+	/**
+	 * Enter a parse tree produced by {@see GrammarParser::parametro()}.
+	 * @param $context The parse tree.
+	 */
+	public function enterParametro(Context\ParametroContext $context): void;
+	/**
+	 * Exit a parse tree produced by {@see GrammarParser::parametro()}.
+	 * @param $context The parse tree.
+	 */
+	public function exitParametro(Context\ParametroContext $context): void;
 	/**
 	 * Enter a parse tree produced by {@see GrammarParser::accesoArreglo()}.
 	 * @param $context The parse tree.

@@ -54,6 +54,10 @@ llamadaFuncion
     : IDENTIFICADOR LPAREN listaExpr? RPAREN
     ;
 
+argumento
+    : REF? logExpr
+    ;
+
 retornar
     : RETURN listaExpr?;
 
@@ -68,7 +72,11 @@ listaRetorno
     ;
 
 listaParametros
-    : IDENTIFICADOR tipos (COMMA IDENTIFICADOR tipos)*
+    : parametro (COMMA parametro)*
+    ;
+
+parametro
+    : IDENTIFICADOR MULT? tipos
     ;
 
 accesoArreglo
@@ -117,7 +125,7 @@ bloqueDefault
     ;
 
 sentenciaIf
-    : IF logExpr bloque (ELSE IF logExpr bloque)* (ELSE bloque)?
+    : IF logExpr bloque (ELSE bloque)?
     ;
 
 bloque
@@ -146,7 +154,7 @@ declaracionConst
     ;
 
 listaExpr
-    : logExpr (COMMA logExpr)*
+    : argumento (COMMA argumento)*
     ;
 
 listaId

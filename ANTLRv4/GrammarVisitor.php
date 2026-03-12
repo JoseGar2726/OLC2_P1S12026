@@ -235,6 +235,15 @@ interface GrammarVisitor extends ParseTreeVisitor
 	public function visitLlamadaFuncion(Context\LlamadaFuncionContext $context);
 
 	/**
+	 * Visit a parse tree produced by {@see GrammarParser::argumento()}.
+	 *
+	 * @param Context\ArgumentoContext $context The parse tree.
+	 *
+	 * @return mixed The visitor result.
+	 */
+	public function visitArgumento(Context\ArgumentoContext $context);
+
+	/**
 	 * Visit a parse tree produced by {@see GrammarParser::retornar()}.
 	 *
 	 * @param Context\RetornarContext $context The parse tree.
@@ -269,6 +278,15 @@ interface GrammarVisitor extends ParseTreeVisitor
 	 * @return mixed The visitor result.
 	 */
 	public function visitListaParametros(Context\ListaParametrosContext $context);
+
+	/**
+	 * Visit a parse tree produced by {@see GrammarParser::parametro()}.
+	 *
+	 * @param Context\ParametroContext $context The parse tree.
+	 *
+	 * @return mixed The visitor result.
+	 */
+	public function visitParametro(Context\ParametroContext $context);
 
 	/**
 	 * Visit a parse tree produced by {@see GrammarParser::accesoArreglo()}.
