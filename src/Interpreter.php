@@ -1348,6 +1348,7 @@ use Context\RuneLitContext;
                     }
                     $this->visit($instruction);
                 }
+                $this->collectSymbols();
             } finally {
                 array_pop($this->scopes);
             }
